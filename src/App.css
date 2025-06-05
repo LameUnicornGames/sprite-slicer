@@ -1,0 +1,249 @@
+.App {
+  text-align: center;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sprite-slicer {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Grid Tools Sidebar */
+.grid-tools {
+  width: 250px;
+  background-color: #f0f0f0;
+  padding: 20px;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+}
+
+.grid-tools h1 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #333;
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+.grid-tools h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #333;
+  font-size: 1.2rem;
+}
+
+.tool-item {
+  margin-bottom: 15px;
+}
+
+.tool-item label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.tool-item input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.tool-item button {
+  width: 100%;
+  padding: 10px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.tool-item button:hover {
+  background-color: #45a049;
+}
+
+/* Image Container */
+.image-container {
+  flex: 1;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #333;
+  overflow: hidden;
+}
+
+.sprite-image {
+  /* No max-width or max-height to allow the image to display at its natural size */
+  object-fit: contain;
+}
+
+.image-error {
+  color: white;
+  background-color: rgba(255, 0, 0, 0.7);
+  padding: 20px;
+  border-radius: 5px;
+  text-align: center;
+  max-width: 80%;
+}
+
+.image-error p {
+  margin: 10px 0;
+}
+
+/* Fallback Image */
+.fallback-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 80%;
+  max-width: 800px;
+}
+
+.fallback-image {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  margin-top: 20px;
+  border: 2px solid #666;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.fallback-grid {
+  width: 100%;
+  height: 100%;
+}
+
+.fallback-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 10px 20px;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+
+/* Selected Cells Info */
+.selected-cells-info {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 15px;
+  border-radius: 5px;
+  max-width: 300px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.selected-cells-info h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 16px;
+  text-align: center;
+}
+
+.cells-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.cell-info {
+  display: flex;
+  align-items: center;
+  padding: 5px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.cell-order-badge {
+  display: inline-block;
+  background-color: rgba(255, 0, 0, 0.8);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 2px 5px;
+  border-radius: 50%;
+  min-width: 15px;
+  text-align: center;
+  margin-right: 10px;
+}
+
+/* Coordinates Output */
+.coordinates-output {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.coordinates-output h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.coordinates-code {
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 10px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 150px;
+  overflow-y: auto;
+  color: #f8f8f8;
+}
+
+/* Grid Overlay */
+.grid-overlay {
+  position: absolute;
+  pointer-events: none;
+  /* Dimensions and position will be set dynamically in the component */
+}
+
+.grid-cell {
+  position: absolute;
+  box-sizing: border-box;
+  border: 1px solid white;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.grid-cell.selected {
+  border: 2px solid #4CAF50;
+  background-color: rgba(76, 175, 80, 0.2);
+}
+
+.cell-order {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background-color: rgba(255, 0, 0, 0.8);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 2px 5px;
+  border-radius: 50%;
+  min-width: 15px;
+  text-align: center;
+}
