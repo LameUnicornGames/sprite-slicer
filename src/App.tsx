@@ -47,10 +47,16 @@ function App() {
   const [imageError, setImageError] = useState<boolean>(false);
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
   const [sceneName, setSceneName] = useState<string>('scene');
+  const [zoom, setZoom] = useState<number>(1);
+  const [panX, setPanX] = useState<number>(0);
+  const [panY, setPanY] = useState<number>(0);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
   
   // References
   const imageRef = React.useRef<HTMLImageElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const imageContainerRef = React.useRef<HTMLDivElement>(null);
   
   // Handle image error
   const handleImageError = () => {
@@ -92,6 +98,13 @@ function App() {
   useEffect(() => {
     clearSelections();
   }, [rows, columns]);
+
+  // Reset zoom and pan when new image is loaded
+  useEffect(() => {
+    setZoom(1);
+    setPanX(0);
+    setPanY(0);
+  }, [uploadedImage, imagePath]);
 
   // Cleanup object URL when component unmounts or when a new image is uploaded
   useEffect(() => {
@@ -158,6 +171,48 @@ function App() {
     setSceneName(e.target.value);
   };
 
+  // Zoom functions
+  const handleZoomIn = () => {
+    setZoom(prev => Math.min(prev * 1.2, 5)); // Max zoom 5x
+  };
+
+  const handleZoomOut = () => {
+    setZoom(prev => Math.max(prev / 1.2, 0.1)); // Min zoom 0.1x
+  };
+
+  const handleZoomReset = () => {
+    setZoom(1);
+    setPanX(0);
+    setPanY(0);
+  };
+
+  // Mouse wheel zoom
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+    setZoom(prev => Math.min(Math.max(prev * zoomFactor, 0.1), 5));
+  };
+
+  // Pan functions
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (zoom > 1) {
+      setIsDragging(true);
+      setDragStart({ x: e.clientX - panX, y: e.clientY - panY });
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDragging && dragStart && zoom > 1) {
+      setPanX(e.clientX - dragStart.x);
+      setPanY(e.clientY - dragStart.y);
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+    setDragStart(null);
+  };
+
   // Handle image upload button click
   const handleUploadButtonClick = () => {
     if (fileInputRef.current) {
@@ -181,6 +236,9 @@ function App() {
       setImageLoaded(false);
       setImageError(false);
       clearSelections();
+      setZoom(1);
+      setPanX(0);
+      setPanY(0);
       
       // Create a URL for the uploaded image
       const imageUrl = URL.createObjectURL(file);
@@ -329,6 +387,24 @@ function App() {
             </>
           )}
           
+          {/* Zoom controls */}
+          {(imageLoaded || imageError) && (
+            <>
+              <div className="tool-item">
+                <button onClick={handleZoomIn}>Zoom In</button>
+              </div>
+              <div className="tool-item">
+                <button onClick={handleZoomOut}>Zoom Out</button>
+              </div>
+              <div className="tool-item">
+                <button onClick={handleZoomReset}>Reset Zoom</button>
+              </div>
+              <div className="tool-item zoom-display">
+                <span>Zoom: {Math.round(zoom * 100)}%</span>
+              </div>
+            </>
+          )}
+          
           {/* Show Scene Name and Download button when cells are selected */}
           {selectedCells.length > 0 && (
             <>
@@ -348,7 +424,20 @@ function App() {
           )}
         </div>
         
-        <div className="image-container">
+        <div 
+          className="image-container"
+          ref={imageContainerRef}
+          onWheel={handleWheel}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          style={{
+            cursor: zoom > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
+            overflow: 'hidden',
+            position: 'relative'
+          }}
+        >
           {/* Image display - only show if there's an image to display */}
           {(uploadedImage || imagePath) && (
             <>
@@ -361,14 +450,67 @@ function App() {
                   <FallbackImage rows={rows || 4} columns={columns || 4} />
                 </div>
               ) : (
-                <img 
-                  ref={imageRef}
-                  src={uploadedImage || imagePath} 
-                  alt="Sprite Sheet" 
-                  className="sprite-image"
-                  onLoad={handleImageLoad}
-                  onError={handleImageError}
-                />
+                <div
+                  className="image-wrapper"
+                  style={{
+                    transform: `translate(${panX}px, ${panY}px) scale(${zoom})`,
+                    transformOrigin: 'center center',
+                    display: 'inline-block',
+                    position: 'relative'
+                  }}
+                >
+                  <img 
+                    ref={imageRef}
+                    src={uploadedImage || imagePath} 
+                    alt="Sprite Sheet" 
+                    className="sprite-image"
+                    onLoad={handleImageLoad}
+                    onError={handleImageError}
+                    style={{ display: 'block' }}
+                  />
+                  
+                  {/* Grid overlay - positioned inside the image wrapper */}
+                  {imageLoaded && rows > 0 && columns > 0 && (
+                    <div 
+                      className="grid-overlay"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        pointerEvents: zoom > 1.5 ? 'none' : 'auto'
+                      }}
+                    >
+                      {Array.from({ length: rows }).map((_, rowIndex) => (
+                        Array.from({ length: columns }).map((_, colIndex) => {
+                          // Find if this cell is selected
+                          const selectedCell = selectedCells.find(cell => 
+                            cell.row === rowIndex && cell.col === colIndex
+                          );
+                          
+                          return (
+                            <div 
+                              key={`${rowIndex}-${colIndex}`}
+                              className={`grid-cell ${selectedCell ? 'selected' : ''}`}
+                              style={{
+                                width: `${100 / columns}%`,
+                                height: `${100 / rows}%`,
+                                top: `${(rowIndex * 100) / rows}%`,
+                                left: `${(colIndex * 100) / columns}%`
+                              }}
+                              onClick={() => zoom <= 1.5 && handleCellClick(rowIndex, colIndex)}
+                            >
+                              {selectedCell && (
+                                <span className="cell-order">{selectedCell.order}</span>
+                              )}
+                            </div>
+                          );
+                        })
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
             </>
           )}
@@ -397,48 +539,6 @@ function App() {
                   })), null, 2)}
                 </pre>
               </div>
-            </div>
-          )}
-          
-          {/* Grid overlay - works with both real image and fallback */}
-          {((imageLoaded && !imageError) || imageError) && rows > 0 && columns > 0 && (
-            <div 
-              className="grid-overlay"
-              style={{
-                width: imageRef.current ? imageRef.current.clientWidth : 0,
-                height: imageRef.current ? imageRef.current.clientHeight : 0,
-                top: imageRef.current ? imageRef.current.offsetTop : 0,
-                left: imageRef.current ? imageRef.current.offsetLeft : 0,
-                position: 'absolute',
-                pointerEvents: 'none',
-              }}
-            >
-              {Array.from({ length: rows }).map((_, rowIndex) => (
-                Array.from({ length: columns }).map((_, colIndex) => {
-                  // Find if this cell is selected
-                  const selectedCell = selectedCells.find(cell => 
-                    cell.row === rowIndex && cell.col === colIndex
-                  );
-                  
-                  return (
-                    <div 
-                      key={`${rowIndex}-${colIndex}`}
-                      className={`grid-cell ${selectedCell ? 'selected' : ''}`}
-                      style={{
-                        width: `${100 / columns}%`,
-                        height: `${100 / rows}%`,
-                        top: `${(rowIndex * 100) / rows}%`,
-                        left: `${(colIndex * 100) / columns}%`
-                      }}
-                      onClick={() => handleCellClick(rowIndex, colIndex)}
-                    >
-                      {selectedCell && (
-                        <span className="cell-order">{selectedCell.order}</span>
-                      )}
-                    </div>
-                  );
-                })
-              ))}
             </div>
           )}
         </div>

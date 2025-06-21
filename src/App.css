@@ -68,6 +68,16 @@
   background-color: #45a049;
 }
 
+.zoom-display {
+  text-align: center;
+  font-weight: bold;
+  color: #666;
+}
+
+.zoom-display span {
+  font-size: 14px;
+}
+
 /* Image Container */
 .image-container {
   flex: 1;
@@ -77,11 +87,19 @@
   align-items: center;
   background-color: #333;
   overflow: hidden;
+  user-select: none;
+}
+
+.image-wrapper {
+  display: inline-block;
+  transition: transform 0.1s ease;
 }
 
 .sprite-image {
   /* No max-width or max-height to allow the image to display at its natural size */
   object-fit: contain;
+  user-select: none;
+  pointer-events: none;
 }
 
 .image-error {
